@@ -40,12 +40,12 @@ if __name__ == "__main__":
     #   保存视频时需要ctrl+c退出或者运行到最后一帧才会完成完整的保存步骤。
     #----------------------------------------------------------------------------------------------------------#
     video_path      = 0
-    video_save_path = ""
+    video_save_path = "" # 我把代码改了，只需要输入目标文件夹，会自动命名并保存
     video_fps       = 25.0
     #----------------------------------------------------------------------------------------------------------#
     #   test_interval       用于指定测量fps的时候，图片检测的次数。理论上test_interval越大，fps越准确。
     #   fps_image_path      用于指定测试的fps图片
-    #   
+    #
     #   test_interval和fps_image_path仅在mode='fps'有效
     #----------------------------------------------------------------------------------------------------------#
     test_interval   = 100
@@ -53,14 +53,14 @@ if __name__ == "__main__":
     #-------------------------------------------------------------------------#
     #   dir_origin_path     指定了用于检测的图片的文件夹路径
     #   dir_save_path       指定了检测完图片的保存路径
-    #   
+    #
     #   dir_origin_path和dir_save_path仅在mode='dir_predict'时有效
     #-------------------------------------------------------------------------#
     dir_origin_path = "img/"
-    dir_save_path   = "img_out/"
+    dir_save_path   = "tagged_img/"
     #-------------------------------------------------------------------------#
     #   heatmap_save_path   热力图的保存路径，默认保存在model_data下
-    #   
+    #
     #   heatmap_save_path仅在mode='heatmap'有效
     #-------------------------------------------------------------------------#
     heatmap_save_path = "model_data/heatmap_vision.png"
@@ -70,10 +70,10 @@ if __name__ == "__main__":
     #-------------------------------------------------------------------------#
     simplify        = True
     onnx_save_path  = "model_data/models.onnx"
-    
+
     if mode == "predict":
         '''
-        1、如果想要进行检测完的图片的保存，利用r_image.save("img.jpg")即可保存，直接在predict.py里进行修改即可。 
+        1、如果想要进行检测完的图片的保存，利用r_image.save("img.jpg")即可保存，直接在predict.py里进行修改即可。
         2、如果想要获得预测框的坐标，可以进入centernet.detect_image函数，在绘图部分读取top，left，bottom，right这四个值。
         3、如果想要利用预测框截取下目标，可以进入centernet.detect_image函数，在绘图部分利用获取到的top，left，bottom，right这四个值
         在原图上利用矩阵的方式进行截取。
@@ -90,9 +90,14 @@ if __name__ == "__main__":
             else:
                 r_image = centernet.detect_image(image, crop = crop, count=count)
                 r_image.show()
+                image_save_path='./tagged_img/'+img.split('/')[-1].split('.')[0]+'.png'
+                print("Save tagged image to the path :" + image_save_path)
+                r_image.save(image_save_path)
 
     elif mode == "video":
         capture = cv2.VideoCapture(video_path)
+        if video_path!=0:
+            video_save_path=video_save_path+video_path.split("/")[-1].split(".")[0]+".mp4"
         if video_save_path!="":
             fourcc  = cv2.VideoWriter_fourcc(*'XVID')
             size    = (int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)))
@@ -117,13 +122,13 @@ if __name__ == "__main__":
             frame = np.array(centernet.detect_image(frame))
             # RGBtoBGR满足opencv显示格式
             frame = cv2.cvtColor(frame,cv2.COLOR_RGB2BGR)
-            
+
             fps  = ( fps + (1./(time.time()-t1)) ) / 2
             print("fps= %.2f"%(fps))
             frame = cv2.putText(frame, "fps= %.2f"%(fps), (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            
+
             cv2.imshow("video",frame)
-            c= cv2.waitKey(1) & 0xff 
+            c= cv2.waitKey(1) & 0xff
             if video_save_path!="":
                 out.write(frame)
 
@@ -137,7 +142,7 @@ if __name__ == "__main__":
             print("Save processed video to the path :" + video_save_path)
             out.release()
         cv2.destroyAllWindows()
-        
+
     elif mode == "fps":
         img = Image.open(fps_image_path)
         tact_time = centernet.get_FPS(img, test_interval)
@@ -168,9 +173,9 @@ if __name__ == "__main__":
                 continue
             else:
                 centernet.detect_heatmap(image, heatmap_save_path)
-        
+
     elif mode == "export_onnx":
         centernet.convert_to_onnx(simplify, onnx_save_path)
-        
+
     else:
         raise AssertionError("Please specify the correct mode: 'predict', 'video', 'fps' or 'dir_predict'.")
