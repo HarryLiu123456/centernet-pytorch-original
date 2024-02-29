@@ -12,7 +12,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from functools import partial
 
-from nets.centernet import CenterNet_HourglassNet, CenterNet_Resnet50
+from nets.centernet import CenterNet_Resnet50
 from nets.centernet_training import get_lr_scheduler, set_optimizer_lr
 from utils.callbacks import EvalCallback, LossHistory
 from utils.dataloader import CenternetDataset, centernet_dataset_collate
@@ -262,10 +262,8 @@ if __name__ == "__main__":
     #----------------------------------------------------#
     class_names, num_classes = get_classes(classes_path)
 
-    if backbone == "resnet50":
-        model = CenterNet_Resnet50(num_classes, pretrained = pretrained)
-    else:
-        model = CenterNet_HourglassNet({'hm': num_classes, 'wh': 2, 'reg':2}, pretrained = pretrained)
+    model = CenterNet_Resnet50(num_classes, pretrained = pretrained)
+
     if model_path != '':
         #------------------------------------------------------#
         #   权值文件请看README，百度网盘下载

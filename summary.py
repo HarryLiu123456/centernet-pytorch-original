@@ -5,7 +5,7 @@ import torch
 from thop import clever_format, profile
 from torchsummary import summary
 
-from nets.centernet import CenterNet_HourglassNet, CenterNet_Resnet50
+from nets.centernet import CenterNet_Resnet50
 
 if __name__ == "__main__":
     input_shape     = [512, 512]

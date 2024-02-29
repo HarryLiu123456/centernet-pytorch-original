@@ -12,7 +12,7 @@
         1. 骨干冻结函数
         1. 骨干解冻函数
         1. 初始化权重函数
-    1. hourglass.py网络模块（暂时没用）
+    1. hourglass.py网络模块（已删除）
     1. nets.resnet50.py网络模块
         1. 特征提取部分（resnet50）
         1. 特征解码部分（resnet50_Decoder）

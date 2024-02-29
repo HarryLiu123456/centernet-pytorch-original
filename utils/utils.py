@@ -109,9 +109,6 @@ def download_weights(backbone, model_dir="./model_data"):
     import os
     from torch.hub import load_state_dict_from_url
     
-    if backbone == "hourglass":
-        raise ValueError("HourglassNet has no pretrained model")
-    
     download_urls = {
         'resnet50'      : 'https://s3.amazonaws.com/pytorch/models/resnet50-19c8e357.pth',
     }

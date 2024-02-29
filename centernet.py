@@ -7,7 +7,7 @@ import torch
 import torch.backends.cudnn as cudnn
 from PIL import ImageDraw, ImageFont
 
-from nets.centernet import CenterNet_HourglassNet, CenterNet_Resnet50
+from nets.centernet import CenterNet_Resnet50
 from utils.utils import (cvtColor, get_classes, preprocess_input, resize_image,
                          show_config)
 from utils.utils_bbox import decode_bbox, postprocess
@@ -34,7 +34,7 @@ class CenterNet(object):
         "classes_path"      : 'model_data/voc_classes.txt',
         #--------------------------------------------------------------------------#
         #   用于选择所使用的模型的主干
-        #   resnet50, hourglass
+        #   resnet50
         #--------------------------------------------------------------------------#
         "backbone"          : 'resnet50',
         #--------------------------------------------------------------------------#
@@ -51,7 +51,7 @@ class CenterNet(object):
         "nms_iou"           : 0.3,
         #--------------------------------------------------------------------------#
         #   是否进行非极大抑制，可以根据检测效果自行选择
-        #   backbone为resnet50时建议设置为True、backbone为hourglass时建议设置为False
+        #   backbone为resnet50时建议设置为True
         #--------------------------------------------------------------------------#
         "nms"               : True,
         #---------------------------------------------------------------------#
@@ -105,11 +105,9 @@ class CenterNet(object):
         #-------------------------------#
         #   载入模型与权值
         #-------------------------------#
-        assert self.backbone in ['resnet50', 'hourglass']
-        if self.backbone == "resnet50":
-            self.net = CenterNet_Resnet50(num_classes=self.num_classes, pretrained=False)
-        else:
-            self.net = CenterNet_HourglassNet({'hm': self.num_classes, 'wh': 2, 'reg':2})
+        assert self.backbone in ['resnet50']
+        self.net = CenterNet_Resnet50(num_classes=self.num_classes, pretrained=False)
+
 
         device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.net.load_state_dict(torch.load(self.model_path, map_location=device))
@@ -151,8 +149,6 @@ class CenterNet(object):
             #   将图像输入网络当中进行预测！
             #---------------------------------------------------------#
             outputs = self.net(images)
-            if self.backbone == 'hourglass':
-                outputs = [outputs[-1]["hm"].sigmoid(), outputs[-1]["wh"], outputs[-1]["reg"]]
             #-----------------------------------------------------------#
             #   利用预测结果进行解码
             #-----------------------------------------------------------#
@@ -275,8 +271,6 @@ class CenterNet(object):
             #   将图像输入网络当中进行预测！
             #---------------------------------------------------------#
             outputs = self.net(images)
-            if self.backbone == 'hourglass':
-                outputs = [outputs[-1]["hm"].sigmoid(), outputs[-1]["wh"], outputs[-1]["reg"]]
             #-----------------------------------------------------------#
             #   利用预测结果进行解码
             #-----------------------------------------------------------#
@@ -299,8 +293,6 @@ class CenterNet(object):
                 #   将图像输入网络当中进行预测！
                 #---------------------------------------------------------#
                 outputs = self.net(images)
-                if self.backbone == 'hourglass':
-                    outputs = [outputs[-1]["hm"].sigmoid(), outputs[-1]["wh"], outputs[-1]["reg"]]
                 #-----------------------------------------------------------#
                 #   利用预测结果进行解码
                 #-----------------------------------------------------------#
@@ -346,8 +338,6 @@ class CenterNet(object):
             #   将图像输入网络当中进行预测！
             #---------------------------------------------------------#
             outputs = self.net(images)
-            if self.backbone == 'hourglass':
-                outputs = [outputs[-1]["hm"].sigmoid(), outputs[-1]["wh"], outputs[-1]["reg"]]
         
         plt.imshow(image, alpha=1)
         plt.axis('off')
@@ -433,8 +423,6 @@ class CenterNet(object):
             #   将图像输入网络当中进行预测！
             #---------------------------------------------------------#
             outputs = self.net(images)
-            if self.backbone == 'hourglass':
-                outputs = [outputs[-1]["hm"].sigmoid(), outputs[-1]["wh"], outputs[-1]["reg"]]
             #-----------------------------------------------------------#
             #   利用预测结果进行解码
             #-----------------------------------------------------------#
