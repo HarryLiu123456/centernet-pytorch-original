@@ -1,3 +1,8 @@
+'''
+这段代码主要用于处理和后处理目标检测模型（如CenterNet）的预测结果。
+它包含了几个关键函数，用于在模型预测后对预测结果进行处理，包括非极大值抑制（NMS）、
+热力图的最大值筛选、预测框的校正等，以得到最终的目标检测结果。
+'''
 import numpy as np
 import torch
 from torch import nn

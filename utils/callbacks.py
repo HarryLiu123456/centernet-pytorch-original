@@ -1,3 +1,9 @@
+'''
+这段代码定义了两个主要的类：LossHistory 和 EvalCallback，
+它们主要用于在训练深度学习模型时记录训练过程中的损失和评估结果。
+这些类通常用于模型的训练和验证过程，以便于监控模型的性能和进行调试。
+'''
+
 import datetime
 import os
 
@@ -7,16 +13,15 @@ import torch
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import scipy.signal
-
 import shutil
 import numpy as np
 from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from .utils import cvtColor, preprocess_input, resize_image
-from .utils_bbox import decode_bbox, postprocess
-from .utils_map import get_coco_map, get_map
+from utils.utils import cvtColor, preprocess_input, resize_image
+from utils.utils_bbox import decode_bbox, postprocess
+from utils.utils_map import get_coco_map, get_map
 
 
 class LossHistory():

@@ -20,7 +20,7 @@ model_urls = {
     'resnet152': 'https://s3.amazonaws.com/pytorch/models/resnet152-b121ed2d.pth',
 }
 
-#   用于ResNet50的残差连接模块
+#   作为ResNet50的残差连接模块
 #   Bottleneck模块由三个卷积层组成
 class Bottleneck(nn.Module):
 
@@ -56,7 +56,6 @@ class Bottleneck(nn.Module):
         self.stride = stride
 
     def forward(self, x):
-
         #   残差连接重要部分即训练x+f（x），记x为residual
         residual = x
 
@@ -84,13 +83,18 @@ class Bottleneck(nn.Module):
 #   16x16x2048的有效特征层
 #-----------------------------------------------------------------#
 class ResNet(nn.Module):
+
     def __init__(self, block, layers, num_classes=1000):
+        
         self.inplanes = 64
+
         super(ResNet, self).__init__()
+
         # 512,512,3 -> 256,256,64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
+
         # 256x256x64 -> 128x128x64
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=0, ceil_mode=True) # change
 
@@ -109,16 +113,14 @@ class ResNet(nn.Module):
         self.avgpool = nn.AvgPool2d(7)
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
-        '''
-        对于卷积层（nn.Conv2d），它使用正态分布（normal_）来初始化权重。
-            正态分布的均值为0，标准差计算为math.sqrt(2. / n)，其中n是卷积核的大小乘以输出通道数。
-            这种初始化方法是为了避免梯度消失的问题，尤其是在使用ReLU激活函数时，
-            它可以帮助网络更好地学习到深层次的特征2。
-        对于批量归一化层（nn.BatchNorm2d），它将权重（weight）初始化为1，并将偏置（bias）初始化为0。
-            这种初始化方法是因为批量归一化层通常会自动调整权重和偏置，使得输出具有零均值和单位方差，
-            从而提高模型的性能和训练的稳定性2。
-        '''
 
+        # 对于卷积层（nn.Conv2d），它使用正态分布（normal_）来初始化权重。
+        #     正态分布的均值为0，标准差计算为math.sqrt(2. / n)，其中n是卷积核的大小乘以输出通道数。
+        #     这种初始化方法是为了避免梯度消失的问题，尤其是在使用ReLU激活函数时，
+        #     它可以帮助网络更好地学习到深层次的特征2。
+        # 对于批量归一化层（nn.BatchNorm2d），它将权重（weight）初始化为1，并将偏置（bias）初始化为0。
+        #     这种初始化方法是因为批量归一化层通常会自动调整权重和偏置，使得输出具有零均值和单位方差，
+        #     从而提高模型的性能和训练的稳定性2。
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels

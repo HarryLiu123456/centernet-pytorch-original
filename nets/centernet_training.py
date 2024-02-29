@@ -1,3 +1,13 @@
+'''
+    1. centernet_training.py模块
+        1. 一些训练时用到的函数
+        1. 计算focal_loss
+        1. 计算l1_loss
+        1. 初始化权重
+        1. 学习率调度器
+        1. 灵活地调整学习率
+'''
+
 import math
 from functools import partial
 
