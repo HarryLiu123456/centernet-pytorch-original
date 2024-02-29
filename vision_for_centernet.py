@@ -43,3 +43,4 @@ if __name__ == "__main__":
     ax.invert_yaxis()
 
     plt.show()
+    plt.savefig("centernet.png")

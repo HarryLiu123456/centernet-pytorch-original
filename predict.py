@@ -40,7 +40,7 @@ if __name__ == "__main__":
     #   保存视频时需要ctrl+c退出或者运行到最后一帧才会完成完整的保存步骤。
     #----------------------------------------------------------------------------------------------------------#
     video_path      = 0
-    video_save_path = ""
+    video_save_path = ""    # 我把代码改了，只需要输入目标文件夹，会自动命名并保存
     video_fps       = 25.0
     #----------------------------------------------------------------------------------------------------------#
     #   test_interval       用于指定测量fps的时候，图片检测的次数。理论上test_interval越大，fps越准确。
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     #   dir_origin_path和dir_save_path仅在mode='dir_predict'时有效
     #-------------------------------------------------------------------------#
     dir_origin_path = "img/"
-    dir_save_path   = "img_out/"
+    dir_save_path   = "tagged_img/"
     #-------------------------------------------------------------------------#
     #   heatmap_save_path   热力图的保存路径，默认保存在model_data下
     #   
@@ -90,9 +90,14 @@ if __name__ == "__main__":
             else:
                 r_image = centernet.detect_image(image, crop = crop, count=count)
                 r_image.show()
+                image_save_path='./tagged_img/'+img.split('/')[-1].split('.')[0]+'.png'
+                print("Save tagged image to the path :" + image_save_path)
+                r_image.save(image_save_path)
 
     elif mode == "video":
         capture = cv2.VideoCapture(video_path)
+        if video_path!=0:
+            video_save_path=video_save_path+video_path.split("/")[-1].split(".")[0]+".mp4"
         if video_save_path!="":
             fourcc  = cv2.VideoWriter_fourcc(*'XVID')
             size    = (int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)))
