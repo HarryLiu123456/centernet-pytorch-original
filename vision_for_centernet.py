@@ -3,7 +3,7 @@ import numpy as np
 
 if __name__ == "__main__":
     height, width, feat_stride = 128,128,1
-        
+
     fig = plt.figure()
     ax  = fig.add_subplot(121)
     plt.ylim(-10,17)
@@ -39,7 +39,8 @@ if __name__ == "__main__":
     for i in [0,1,2]:
         rect = plt.Rectangle([boxes[i, 0],boxes[i, 1]], wh[i,0], wh[i,1], color="r",fill=False)
         ax.add_patch(rect)
-    
+
     ax.invert_yaxis()
 
     plt.show()
+    plt.savefig("centernet.png")
