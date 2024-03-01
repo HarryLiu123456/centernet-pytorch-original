@@ -12,13 +12,13 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from functools import partial
 
-from nets.centernet import CenterNet_Resnet50
-from nets.centernet_training import get_lr_scheduler, set_optimizer_lr
-from utils.callbacks import EvalCallback, LossHistory
-from utils.dataloader import CenternetDataset, centernet_dataset_collate
-from utils.utils import (download_weights, get_classes, seed_everything,
+from net.centernet import CenterNet_Resnet50
+from net.centernet_training import get_lr_scheduler, set_optimizer_lr
+from util.callbacks import EvalCallback, LossHistory
+from util.dataloader import CenternetDataset, centernet_dataset_collate
+from util.utils import (download_weights, get_classes, seed_everything,
                          show_config, worker_init_fn)
-from utils.utils_fit import fit_one_epoch
+from util.utils_fit import fit_one_epoch
 
 '''
 训练自己的目标检测模型一定需要注意以下几点：
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     #------------------------------------------------------------------#
     #   save_dir        权值与日志文件保存的文件夹
     #------------------------------------------------------------------#
-    save_dir            = 'logs'
+    save_dir            = 'log'
     #------------------------------------------------------------------#
     #   eval_flag       是否在训练时进行评估，评估对象为验证集
     #                   安装pycocotools库后，评估体验更佳。

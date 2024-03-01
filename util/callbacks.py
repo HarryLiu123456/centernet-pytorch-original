@@ -19,9 +19,9 @@ from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from utils.utils import cvtColor, preprocess_input, resize_image
-from utils.utils_bbox import decode_bbox, postprocess
-from utils.utils_map import get_coco_map, get_map
+from util.utils import cvtColor, preprocess_input, resize_image
+from util.utils_bbox import decode_bbox, postprocess
+from util.utils_map import get_coco_map, get_map
 
 
 class LossHistory():

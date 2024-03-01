@@ -5,8 +5,8 @@ from PIL import Image
 from tqdm import tqdm
 
 from centernet import CenterNet
-from utils.utils import get_classes
-from utils.utils_map import get_coco_map, get_map
+from util.utils import get_classes
+from util.utils_map import get_coco_map, get_map
 
 if __name__ == "__main__":
     '''

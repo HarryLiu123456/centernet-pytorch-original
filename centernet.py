@@ -7,10 +7,10 @@ import torch
 import torch.backends.cudnn as cudnn
 from PIL import ImageDraw, ImageFont
 
-from nets.centernet import CenterNet_Resnet50
-from utils.utils import (cvtColor, get_classes, preprocess_input, resize_image,
+from net.centernet import CenterNet_Resnet50
+from util.utils import (cvtColor, get_classes, preprocess_input, resize_image,
                          show_config)
-from utils.utils_bbox import decode_bbox, postprocess
+from util.utils_bbox import decode_bbox, postprocess
 
 
 #--------------------------------------------#

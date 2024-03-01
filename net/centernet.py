@@ -11,7 +11,7 @@ import math
 import torch.nn as nn
 from torch import nn
 
-from nets.resnet50 import resnet50, resnet50_Decoder, resnet50_Head
+from net.resnet50 import resnet50, resnet50_Decoder, resnet50_Head
 
 class CenterNet_Resnet50(nn.Module):
     def __init__(self, num_classes = 20, pretrained = False):

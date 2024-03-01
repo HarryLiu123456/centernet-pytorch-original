@@ -5,3 +5,5 @@
 *.jpg
 *.png
 *.ttf
+
+*.pth

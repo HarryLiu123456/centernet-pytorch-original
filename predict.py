@@ -12,7 +12,7 @@ from centernet import CenterNet
 
 if __name__ == "__main__":
     centernet = CenterNet()
-    centernet.model_path = 'logs/last_epoch_weights.pth'
+    centernet.model_path = 'log/last_epoch_weights.pth'
     print(centernet.model_path)
     centernet.generate()
     #----------------------------------------------------------------------------------------------------------#
