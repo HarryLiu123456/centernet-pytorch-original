@@ -12,7 +12,7 @@ from tqdm import tqdm
 from util.utils import get_lr
 
 
-def fit_one_epoch(model_train, model, loss_history, eval_callback, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, Epoch, cuda, fp16, scaler, backbone, save_period, save_dir, local_rank=0):
+def fit_one_epoch(model_train, model, loss_history, eval_callback, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, Epoch, cuda, scaler, backbone, save_period, save_dir, local_rank=0):
     total_r_loss    = 0
     total_c_loss    = 0
     total_loss      = 0
@@ -34,81 +34,40 @@ def fit_one_epoch(model_train, model, loss_history, eval_callback, optimizer, ep
         #   清零梯度
         #----------------------#
         optimizer.zero_grad()
-        if not fp16:
-            if backbone=="resnet50":
-                hm, wh, offset  = model_train(batch_images)
-                c_loss          = focal_loss(hm, batch_hms)
-                wh_loss         = 0.1 * reg_l1_loss(wh, batch_whs, batch_reg_masks)
-                off_loss        = reg_l1_loss(offset, batch_regs, batch_reg_masks)
-                
-                loss            = c_loss + wh_loss + off_loss
 
-                total_loss      += loss.item()
-                total_c_loss    += c_loss.item()
-                total_r_loss    += wh_loss.item() + off_loss.item()
-            else:
-                outputs         = model_train(batch_images)
-                loss            = 0
-                c_loss_all      = 0
-                r_loss_all      = 0
-                index           = 0
-                for output in outputs:
-                    hm, wh, offset = output["hm"].sigmoid(), output["wh"], output["reg"]
-                    c_loss      = focal_loss(hm, batch_hms)
-                    wh_loss     = 0.1 * reg_l1_loss(wh, batch_whs, batch_reg_masks)
-                    off_loss    = reg_l1_loss(offset, batch_regs, batch_reg_masks)
+        if backbone=="resnet50":
+            hm, wh, offset  = model_train(batch_images)
+            c_loss          = focal_loss(hm, batch_hms)
+            wh_loss         = 0.1 * reg_l1_loss(wh, batch_whs, batch_reg_masks)
+            off_loss        = reg_l1_loss(offset, batch_regs, batch_reg_masks)
+            
+            loss            = c_loss + wh_loss + off_loss
 
-                    loss        += c_loss + wh_loss + off_loss
-                    
-                    c_loss_all  += c_loss
-                    r_loss_all  += wh_loss + off_loss
-                    index       += 1
-                total_loss      += loss.item() / index
-                total_c_loss    += c_loss_all.item() / index
-                total_r_loss    += r_loss_all.item() / index
-            loss.backward()
-            optimizer.step()
+            total_loss      += loss.item()
+            total_c_loss    += c_loss.item()
+            total_r_loss    += wh_loss.item() + off_loss.item()
         else:
-            from torch.cuda.amp import autocast
-            with autocast():
-                if backbone=="resnet50":
-                    hm, wh, offset  = model_train(batch_images)
-                    c_loss          = focal_loss(hm, batch_hms)
-                    wh_loss         = 0.1 * reg_l1_loss(wh, batch_whs, batch_reg_masks)
-                    off_loss        = reg_l1_loss(offset, batch_regs, batch_reg_masks)
-                    
-                    loss            = c_loss + wh_loss + off_loss
+            outputs         = model_train(batch_images)
+            loss            = 0
+            c_loss_all      = 0
+            r_loss_all      = 0
+            index           = 0
+            for output in outputs:
+                hm, wh, offset = output["hm"].sigmoid(), output["wh"], output["reg"]
+                c_loss      = focal_loss(hm, batch_hms)
+                wh_loss     = 0.1 * reg_l1_loss(wh, batch_whs, batch_reg_masks)
+                off_loss    = reg_l1_loss(offset, batch_regs, batch_reg_masks)
 
-                    total_loss      += loss.item()
-                    total_c_loss    += c_loss.item()
-                    total_r_loss    += wh_loss.item() + off_loss.item()
-                else:
-                    outputs         = model_train(batch_images)
-                    loss            = 0
-                    c_loss_all      = 0
-                    r_loss_all      = 0
-                    index           = 0
-                    for output in outputs:
-                        hm, wh, offset = output["hm"].sigmoid(), output["wh"], output["reg"]
-                        c_loss      = focal_loss(hm, batch_hms)
-                        wh_loss     = 0.1 * reg_l1_loss(wh, batch_whs, batch_reg_masks)
-                        off_loss    = reg_l1_loss(offset, batch_regs, batch_reg_masks)
-
-                        loss        += c_loss + wh_loss + off_loss
-                        
-                        c_loss_all  += c_loss
-                        r_loss_all  += wh_loss + off_loss
-                        index       += 1
-                    total_loss      += loss.item() / index
-                    total_c_loss    += c_loss_all.item() / index
-                    total_r_loss    += r_loss_all.item() / index
-
-            #----------------------#
-            #   反向传播
-            #----------------------#
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+                loss        += c_loss + wh_loss + off_loss
+                
+                c_loss_all  += c_loss
+                r_loss_all  += wh_loss + off_loss
+                index       += 1
+            total_loss      += loss.item() / index
+            total_c_loss    += c_loss_all.item() / index
+            total_r_loss    += r_loss_all.item() / index
+        loss.backward()
+        optimizer.step()
         
         if local_rank == 0:
             pbar.set_postfix(**{'total_r_loss'  : total_r_loss / (iteration + 1), 

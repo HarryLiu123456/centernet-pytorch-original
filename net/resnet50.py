@@ -1,8 +1,13 @@
 '''
-3. nets.resnet50.py
+3. resnet50.py（网络模块）
     1. 特征提取部分（resnet50）
     2. 特征解码部分（resnet50_Decoder）
     3. 特征处理部分（resnet50_Head）
+    * class Bottleneck(nn.Module)
+    * class ResNet(nn.Module)
+    * def resnet50(pretrained = True)
+    * class resnet50_Decoder(nn.Module)
+    * class resnet50_Head(nn.Module)
 '''
 
 from __future__ import absolute_import, division, print_function
@@ -165,6 +170,7 @@ class ResNet(nn.Module):
 
 def resnet50(pretrained = True):
     model = ResNet(Bottleneck, [3, 4, 6, 3])
+    
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls['resnet50'], model_dir = 'model_data/')
         model.load_state_dict(state_dict)

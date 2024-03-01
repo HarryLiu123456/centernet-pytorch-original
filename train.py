@@ -7,7 +7,6 @@ import os
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
-import torch.distributed as dist
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from functools import partial
@@ -48,27 +47,6 @@ if __name__ == "__main__":
     #----------------------------------------------#
     seed            = 11
     #---------------------------------------------------------------------#
-    #   distributed     用于指定是否使用单机多卡分布式运行
-    #                   终端指令仅支持Ubuntu。CUDA_VISIBLE_DEVICES用于在Ubuntu下指定显卡。
-    #                   Windows系统下默认使用DP模式调用所有显卡，不支持DDP。
-    #   DP模式：
-    #       设置            distributed = False
-    #       在终端中输入    CUDA_VISIBLE_DEVICES=0,1 python train.py
-    #   DDP模式：
-    #       设置            distributed = True
-    #       在终端中输入    CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 train.py
-    #---------------------------------------------------------------------#
-    distributed     = False
-    #---------------------------------------------------------------------#
-    #   sync_bn     是否使用sync_bn，DDP模式多卡可用
-    #---------------------------------------------------------------------#
-    sync_bn         = False
-    #---------------------------------------------------------------------#
-    #   fp16        是否使用混合精度训练
-    #               可减少约一半的显存、需要pytorch1.7.1以上
-    #---------------------------------------------------------------------#
-    fp16            = False
-    #---------------------------------------------------------------------#
     #   classes_path    指向model_data下的txt，与自己训练的数据集相关 
     #                   训练前一定要修改classes_path，使其对应自己的数据集
     #---------------------------------------------------------------------#
@@ -83,7 +61,7 @@ if __name__ == "__main__":
     #   
     #   当model_path = ''的时候不加载整个模型的权值。
     #
-    #   此处使用的是整个模型的权重，因此是在train.py进行加载的，pretrain不影响此处的权值加载。
+    #   此处使用的是 [整个模型的权重] ，因此是在train.py进行加载的，pretrain不影响此处的权值加载。
     #   如果想要让模型从主干的预训练权值开始训练，则设置model_path = ''，pretrain = True，此时仅加载主干。
     #   如果想要让模型从0开始训练，则设置model_path = ''，pretrain = Fasle，Freeze_Train = Fasle，此时从0开始训练，且没有冻结主干的过程。
     #   
@@ -102,12 +80,12 @@ if __name__ == "__main__":
     backbone        = "resnet50"
     #----------------------------------------------------------------------------------------------------------------------------#
     #   pretrained      是否使用主干网络的预训练权重，此处使用的是主干的权重，因此是在模型构建的时候进行加载的。
-    #                   如果设置了model_path，则主干的权值无需加载，pretrained的值无意义。
+    #                   [如果设置了model_path，则主干的权值无需加载，pretrained的值无意义。]
     #                   如果不设置model_path，pretrained = True，此时仅加载主干开始训练。
     #                   如果不设置model_path，pretrained = False，Freeze_Train = Fasle，此时从0开始训练，且没有冻结主干的过程。
     #----------------------------------------------------------------------------------------------------------------------------#
+    #   这里是单指resnet的预训练，它会从网络上下载只适用于resnet的pth文件
     pretrained      = False
-    
     #----------------------------------------------------------------------------------------------------------------------------#
     #   训练分为两个阶段，分别是冻结阶段和解冻阶段。设置冻结阶段是为了满足机器性能不足的同学的训练需求。
     #   冻结训练需要的显存较小，显卡非常差的情况下，可设置Freeze_Epoch等于UnFreeze_Epoch，此时仅仅进行冻结训练。
@@ -168,7 +146,6 @@ if __name__ == "__main__":
     #                   默认先冻结主干训练后解冻训练。
     #------------------------------------------------------------------#
     Freeze_Train        = True
-    
     #------------------------------------------------------------------#
     #   其它训练参数：学习率、优化器、学习率下降有关
     #------------------------------------------------------------------#
@@ -220,48 +197,33 @@ if __name__ == "__main__":
     #                   在IO为瓶颈的时候再开启多线程，即GPU运算速度远大于读取图片的速度。
     #------------------------------------------------------------------#
     num_workers         = 4
-
     #------------------------------------------------------#
     #   train_annotation_path   训练图片路径和标签
     #   val_annotation_path     验证图片路径和标签
     #------------------------------------------------------#
     train_annotation_path   = '2007_train.txt'
     val_annotation_path     = '2007_val.txt'
-    
+    #   设定种子
     seed_everything(seed)
     #------------------------------------------------------#
     #   设置用到的显卡
     #------------------------------------------------------#
     ngpus_per_node  = torch.cuda.device_count()
-    if distributed:
-        dist.init_process_group(backend="nccl")
-        local_rank  = int(os.environ["LOCAL_RANK"])
-        rank        = int(os.environ["RANK"])
-        device      = torch.device("cuda", local_rank)
-        if local_rank == 0:
-            print(f"[{os.getpid()}] (rank = {rank}, local_rank = {local_rank}) training...")
-            print("Gpu Device Count : ", ngpus_per_node)
-    else:
-        device          = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        local_rank      = 0
-        rank            = 0
-
+    device          = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    #*******************************************************#
+    #   这俩不知道干啥的
+    local_rank      = 0
+    rank            = 0
     #----------------------------------------------------#
     #   下载预训练权重
     #----------------------------------------------------#
     if pretrained:
-        if distributed:
-            if local_rank == 0:
-                download_weights(backbone)  
-            dist.barrier()
-        else:
-            download_weights(backbone)
-
+        download_weights(backbone)
     #----------------------------------------------------#
     #   获取classes
     #----------------------------------------------------#
     class_names, num_classes = get_classes(classes_path)
-
+    #  获取model实例
     model = CenterNet_Resnet50(num_classes, pretrained = pretrained)
 
     if model_path != '':
@@ -270,12 +232,12 @@ if __name__ == "__main__":
         #------------------------------------------------------#
         if local_rank == 0:
             print('Load weights {}.'.format(model_path))
-        
         #------------------------------------------------------#
         #   根据预训练权重的Key和模型的Key进行加载
         #------------------------------------------------------#
         model_dict      = model.state_dict()
         pretrained_dict = torch.load(model_path, map_location = device)
+        #   检查权值是否对应上了
         load_key, no_load_key, temp_dict = [], [], {}
         for k, v in pretrained_dict.items():
             if k in model_dict.keys() and np.shape(model_dict[k]) == np.shape(v):
@@ -303,36 +265,14 @@ if __name__ == "__main__":
     else:
         loss_history    = None
         
-    #------------------------------------------------------------------#
-    #   torch 1.2不支持amp，建议使用torch 1.7.1及以上正确使用fp16
-    #   因此torch1.2这里显示"could not be resolve"
-    #------------------------------------------------------------------#
-    if fp16:
-        from torch.cuda.amp import GradScaler as GradScaler
-        scaler = GradScaler()
-    else:
-        scaler = None
+    scaler = None
 
     model_train     = model.train()
-    #----------------------------#
-    #   多卡同步Bn
-    #----------------------------#
-    if sync_bn and ngpus_per_node > 1 and distributed:
-        model_train = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model_train)
-    elif sync_bn:
-        print("Sync_bn is not support in one gpu or not distributed.")
 
     if Cuda:
-        if distributed:
-            #----------------------------#
-            #   多卡平行运行
-            #----------------------------#
-            model_train = model_train.cuda(local_rank)
-            model_train = torch.nn.parallel.DistributedDataParallel(model_train, device_ids=[local_rank], find_unused_parameters=True)
-        else:
-            model_train = torch.nn.DataParallel(model)
-            cudnn.benchmark = True
-            model_train = model_train.cuda()
+        model_train = torch.nn.DataParallel(model)
+        cudnn.benchmark = True
+        model_train = model_train.cuda()
     
     #---------------------------#
     #   读取数据集对应的txt
@@ -422,15 +362,9 @@ if __name__ == "__main__":
         train_dataset   = CenternetDataset(train_lines, input_shape, num_classes, train = True)
         val_dataset     = CenternetDataset(val_lines, input_shape, num_classes, train = False)
         
-        if distributed:
-            train_sampler   = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True,)
-            val_sampler     = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False,)
-            batch_size      = batch_size // ngpus_per_node
-            shuffle         = False
-        else:
-            train_sampler   = None
-            val_sampler     = None
-            shuffle         = True
+        train_sampler   = None
+        val_sampler     = None
+        shuffle         = True
             
         gen             = DataLoader(train_dataset, shuffle = shuffle, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                     drop_last=True, collate_fn=centernet_dataset_collate, sampler=train_sampler, 
@@ -479,9 +413,6 @@ if __name__ == "__main__":
 
                 if epoch_step == 0 or epoch_step_val == 0:
                     raise ValueError("数据集过小，无法继续进行训练，请扩充数据集。")
-
-                if distributed:
-                    batch_size = batch_size // ngpus_per_node
                     
                 gen             = DataLoader(train_dataset, shuffle = shuffle, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                             drop_last=True, collate_fn=centernet_dataset_collate, sampler=train_sampler, 
@@ -491,14 +422,11 @@ if __name__ == "__main__":
                                             worker_init_fn=partial(worker_init_fn, rank=rank, seed=seed))
 
                 UnFreeze_flag = True
-
-            if distributed:
-                train_sampler.set_epoch(epoch)
                 
             set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
             
             fit_one_epoch(model_train, model, loss_history, eval_callback, optimizer, epoch, 
-                    epoch_step, epoch_step_val, gen, gen_val, UnFreeze_Epoch, Cuda, fp16, scaler, backbone, save_period, save_dir, local_rank)
+                    epoch_step, epoch_step_val, gen, gen_val, UnFreeze_Epoch, Cuda, scaler, backbone, save_period, save_dir, local_rank)
             
         if local_rank == 0:
             loss_history.writer.close()

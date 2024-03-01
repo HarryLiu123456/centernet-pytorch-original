@@ -1,9 +1,9 @@
 '''
-1. centernet.py网络总模块
-        1. centernet类
-        1. 骨干冻结函数
-        1. 骨干解冻函数
-        1. 初始化权重函数
+2. centernet.py（网络总模块）
+    1. centernet类（这里面就整合了三种网络，这三种子网络就不用改了，直接调用这里面的三者就行）
+    2. 骨干（resnet）冻结函数
+    3. 骨干解冻函数
+    4. 初始化权重函数
 '''
 
 import math
@@ -16,11 +16,15 @@ from net.resnet50 import resnet50, resnet50_Decoder, resnet50_Head
 class CenterNet_Resnet50(nn.Module):
     def __init__(self, num_classes = 20, pretrained = False):
         super(CenterNet_Resnet50, self).__init__()
+
         self.pretrained = pretrained
+
         # 512,512,3 -> 16,16,2048
         self.backbone = resnet50(pretrained = pretrained)
+
         # 16,16,2048 -> 128,128,64
         self.decoder = resnet50_Decoder(2048)
+
         #-----------------------------------------------------------------#
         #   对获取到的特征进行上采样，进行分类预测和回归预测
         #   128, 128, 64 -> 128, 128, 64 -> 128, 128, num_classes
